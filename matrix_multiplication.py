@@ -1,8 +1,14 @@
 import numpy as np
 import time
+import hashlib
 from functools import wraps
 from multiprocessing import Pool, cpu_count
 import matplotlib.pyplot as plt
+
+
+def hash_matrix(matrix):
+    rounded = np.round(matrix, decimals=3)  # reduce float precision issues
+    return hashlib.md5(rounded.tobytes()).hexdigest()
 
 # decorator to find the execution time
 def timing_decorator(func):
@@ -51,23 +57,27 @@ if __name__ == "__main__":
     B = np.random.rand(n, n)
 
     print("\n--- Sequential Execution ---")
-    _, t_seq = sequential_matrix_multiply(A, B)
+    res_seq, t_seq = sequential_matrix_multiply(A, B)
     print(f"Sequential execution time: {t_seq:.4f} s")
+    hash_seq = hash_matrix(res_seq)
+    print(f"Hash value of sequential execution: {hash_seq}")
 
-    process_counts = [i for i in range(2, cpu_count())]
+    process_counts = [i for i in range(2, cpu_count() + 1)]
     times = []
     speedups = []
     efficiencies = []
 
     for p in process_counts:
         print(f"\n--- Parallel Execution with {p} process(es) ---")
-        _, t_par = parallel_matrix_multiply(A, B, p)
+        res_par, t_par = parallel_matrix_multiply(A, B, p)
         times.append(t_par)
         sp = t_seq / t_par
         eff = sp / p
         speedups.append(sp)
         efficiencies.append(eff)
         print(f"Execution time: {t_par:.4f} s, Speedup: {sp:.2f}, Efficiency: {eff:.2f}")
+        hash_par = hash_matrix(res_par)
+        print(f"Hash value of sequential execution: {hash_par}")
 
     print("\n=== Execution summary ===")
     print(f"{'Processes':<12}{'Time (s)':<15}{'Speedup':<12}{'Efficiency':<12}")
